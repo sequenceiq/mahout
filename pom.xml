@@ -22,12 +22,6 @@
   <artifactId>mahout</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>9</version>
-  </parent>
-
   <packaging>pom</packaging>
   <name>Apache Mahout</name>
   <url>http://mahout.apache.org</url>
@@ -47,13 +41,13 @@
     (hopefully) correct category. Frequent itemset mining takes a set of item groups (terms in a query session,
     shopping cart content) and identifies, which individual items usually appear together.
   </description>
-  <licenses>
+<!--   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
       <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
       <distribution>repo</distribution>
     </license>
-  </licenses>
+  </licenses> -->
   <organization>
     <name>The Apache Software Foundation</name>
     <url>http://www.apache.org/</url>
@@ -122,6 +116,28 @@
         <enabled>false</enabled>
       </releases>
     </repository>
+    <repository>
+ 	    <id>maven-s3-release-repo</id>
+ 			<name>S3 Release Repository</name>
+ 			<url>s3://seq-repo/release</url>
+ 			<releases>
+ 				<enabled>true</enabled>
+ 			</releases>
+ 			<snapshots>
+ 				<enabled>false</enabled>
+ 			</snapshots>
+ 		</repository>
+ 		<repository>
+ 			<id>maven-s3-snapshot-repo</id>
+ 			<name>S3 Snapshot Repository</name>
+ 			<url>s3://seq-repo/snapshots</url>
+ 			<releases>
+ 				<enabled>false</enabled>
+ 			</releases>
+ 			<snapshots>
+ 				<enabled>true</enabled>
+ 			</snapshots>
+ 		</repository>
   </repositories>
 
   <prerequisites>
@@ -663,6 +679,13 @@
         <filtering>true</filtering>
       </resource>
     </resources>
+    <extensions>
+ 			<extension>
+ 				<groupId>org.springframework.build</groupId>
+ 				<artifactId>aws-maven</artifactId>
+ 				<version>5.0.0.RELEASE</version>
+ 			</extension>
+ 		</extensions>
   </build>
   <modules>
     <module>buildtools</module>
@@ -1062,16 +1085,17 @@
       </build>
     </profile>
   </profiles>
-  <scm>
-    <connection>scm:svn:https://svn.apache.org/repos/asf/mahout/trunk</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/mahout/trunk</developerConnection>
-    <url>https://svn.apache.org/repos/asf/mahout</url>
-  </scm>
   <distributionManagement>
-    <site>
-      <id>Website</id>
-      <url>scp://people.apache.org/home/isabel/public_html/mahout_site</url>
-    </site>
+		<repository>
+			<id>aws-release</id>
+			<name>S3 Release Repository</name>
+			<url>s3://seq-repo/release</url>
+		</repository>
+		<snapshotRepository>
+			<id>aws-snapshot</id>
+			<name>S3 Snapshot Repository</name>
+			<url>s3://seq-repo/snapshots</url>
+		</snapshotRepository>
   </distributionManagement>
   <reporting>
     <plugins>
