@@ -101,6 +101,7 @@
     <hadoop.1.version>1.2.1</hadoop.1.version>
     <lucene.version>4.6.1</lucene.version>
     <slf4j.version>1.7.5</slf4j.version>
+    <hadoop2.version>2.3.0</hadoop2.version>
   </properties>
   <issueManagement>
     <system>Jira</system>
