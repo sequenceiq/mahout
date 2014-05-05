@@ -182,9 +182,8 @@ public class ClusterClassifier extends AbstractVectorClassifier implements Onlin
         return policy;
     }
 
-    public void writeToSeqFiles(Path path) throws IOException {
+    public void writeToSeqFiles(Configuration config, Path path) throws IOException {
         writePolicy(policy, path);
-        Configuration config = new Configuration();
         FileSystem fs = FileSystem.get(path.toUri(), config);
         SequenceFile.Writer writer = null;
         ClusterWritable cw = new ClusterWritable();
@@ -204,10 +203,9 @@ public class ClusterClassifier extends AbstractVectorClassifier implements Onlin
     }
 
     public void readFromSeqFiles(Configuration conf, Path path) throws IOException {
-        Configuration config = new Configuration();
         List<Cluster> clusters = Lists.newArrayList();
         for (ClusterWritable cw : new SequenceFileDirValueIterable<ClusterWritable>(path, PathType.LIST,
-                PathFilters.logsCRCFilter(), config)) {
+                PathFilters.logsCRCFilter(), conf)) {
             Cluster cluster = cw.getValue();
             cluster.configure(conf);
             clusters.add(cluster);
