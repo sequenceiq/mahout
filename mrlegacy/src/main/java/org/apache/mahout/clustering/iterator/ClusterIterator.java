@@ -185,7 +185,7 @@ public final class ClusterIterator {
             if (!job.waitForCompletion(true)) {
                 throw new InterruptedException("Cluster Iteration " + iteration + " failed processing " + priorPath);
             }
-            ClusterClassifier.writePolicy(policy, clustersOut);
+            ClusterClassifier.writePolicy(conf, policy, clustersOut);
             FileSystem fs = FileSystem.get(outPath.toUri(), conf);
             iteration++;
             if (isConverged(clustersOut, conf, fs)) {

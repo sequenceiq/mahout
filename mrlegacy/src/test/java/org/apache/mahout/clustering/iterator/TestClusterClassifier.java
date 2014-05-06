@@ -222,7 +222,7 @@ public final class TestClusterClassifier extends MahoutTestCase {
         ClusterClassifier prior = newKlusterClassifier();
         prior.writeToSeqFiles(conf, path);
         ClusteringPolicy policy = new KMeansClusteringPolicy();
-        ClusterClassifier.writePolicy(policy, path);
+        ClusterClassifier.writePolicy(conf, policy, path);
         assertEquals(3, prior.getModels().size());
         System.out.println("Prior");
         for (Cluster cluster : prior.getModels()) {

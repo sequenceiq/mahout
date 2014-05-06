@@ -329,7 +329,7 @@ public class FuzzyKMeansDriver extends AbstractJob {
             boolean runSequential)
             throws IOException, ClassNotFoundException, InterruptedException {
 
-        ClusterClassifier.writePolicy(new FuzzyKMeansClusteringPolicy(m, convergenceDelta), clustersIn);
+        ClusterClassifier.writePolicy(conf, new FuzzyKMeansClusteringPolicy(m, convergenceDelta), clustersIn);
         ClusterClassificationDriver.run(conf, input, output, new Path(output, PathDirectory.CLUSTERED_POINTS_DIRECTORY),
                 threshold, emitMostLikely, runSequential);
     }

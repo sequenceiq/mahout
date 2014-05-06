@@ -255,7 +255,7 @@ public class KMeansDriver extends AbstractJob {
             log.info("Running Clustering");
             log.info("Input: {} Clusters In: {} Out: {}", input, clustersIn, output);
         }
-        ClusterClassifier.writePolicy(new KMeansClusteringPolicy(), clustersIn);
+        ClusterClassifier.writePolicy(conf, new KMeansClusteringPolicy(), clustersIn);
         ClusterClassificationDriver.run(conf, input, output, new Path(output, PathDirectory.CLUSTERED_POINTS_DIRECTORY),
                 clusterClassificationThreshold, true, runSequential);
     }
