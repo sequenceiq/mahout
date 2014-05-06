@@ -158,7 +158,7 @@ public final class ClusterIterator {
      */
     public static void iterateMR(Configuration conf, Path inPath, Path priorPath, Path outPath, int numIterations)
             throws IOException, InterruptedException, ClassNotFoundException {
-        ClusteringPolicy policy = ClusterClassifier.readPolicy(priorPath);
+        ClusteringPolicy policy = ClusterClassifier.readPolicy(conf, priorPath);
         Path clustersOut = null;
         int iteration = 1;
         while (iteration <= numIterations) {

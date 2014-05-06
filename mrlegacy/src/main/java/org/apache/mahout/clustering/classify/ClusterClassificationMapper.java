@@ -50,112 +50,113 @@ import org.apache.mahout.math.VectorWritable;
  * Mapper for classifying vectors into clusters.
  */
 public class ClusterClassificationMapper extends
-    Mapper<WritableComparable<?>,VectorWritable,IntWritable,WeightedVectorWritable> {
-  
-  private double threshold;
-  private List<Cluster> clusterModels;
-  private ClusterClassifier clusterClassifier;
-  private IntWritable clusterId;
-  private boolean emitMostLikely;
-  
-  @Override
-  protected void setup(Context context) throws IOException, InterruptedException {
-    super.setup(context);
-    
-    Configuration conf = context.getConfiguration();
-    String clustersIn = conf.get(ClusterClassificationConfigKeys.CLUSTERS_IN);
-    threshold = conf.getFloat(ClusterClassificationConfigKeys.OUTLIER_REMOVAL_THRESHOLD, 0.0f);
-    emitMostLikely = conf.getBoolean(ClusterClassificationConfigKeys.EMIT_MOST_LIKELY, false);
-    
-    clusterModels = Lists.newArrayList();
-    
-    if (clustersIn != null && !clustersIn.isEmpty()) {
-      Path clustersInPath = new Path(clustersIn);
-      clusterModels = populateClusterModels(clustersInPath, conf);
-      ClusteringPolicy policy = ClusterClassifier
-          .readPolicy(finalClustersPath(clustersInPath));
-      clusterClassifier = new ClusterClassifier(clusterModels, policy);
-    }
-    clusterId = new IntWritable();
-  }
-  
-  /**
-   * Mapper which classifies the vectors to respective clusters.
-   */
-  @Override
-  protected void map(WritableComparable<?> key, VectorWritable vw, Context context)
-    throws IOException, InterruptedException {
-    if (!clusterModels.isEmpty()) {
-      // Converting to NamedVectors to preserve the vectorId else its not obvious as to which point
-      // belongs to which cluster - fix for MAHOUT-1410
-      Class<? extends Vector> vectorClass = vw.get().getClass();
-      Vector vector = vw.get();
-      if (!vectorClass.equals(NamedVector.class)) {
-        if (key.getClass().equals(Text.class)) {
-          vector = new NamedVector(vector, key.toString());
-        } else if (key.getClass().equals(IntWritable.class)) {
-          vector = new NamedVector(vector, Integer.toString(((IntWritable) key).get()));
-        }
-      }
-      Vector pdfPerCluster = clusterClassifier.classify(vector);
-      if (shouldClassify(pdfPerCluster)) {
-        if (emitMostLikely) {
-          int maxValueIndex = pdfPerCluster.maxValueIndex();
-          write(new VectorWritable(vector), context, maxValueIndex, 1.0);
-        } else {
-          writeAllAboveThreshold(new VectorWritable(vector), context, pdfPerCluster);
-        }
-      }
-    }
-  }
-  
-  private void writeAllAboveThreshold(VectorWritable vw, Context context,
-      Vector pdfPerCluster) throws IOException, InterruptedException {
-    for (Element pdf : pdfPerCluster.nonZeroes()) {
-      if (pdf.get() >= threshold) {
-        int clusterIndex = pdf.index();
-        write(vw, context, clusterIndex, pdf.get());
-      }
-    }
-  }
-  
-  private void write(VectorWritable vw, Context context, int clusterIndex, double weight)
-    throws IOException, InterruptedException {
-    Cluster cluster = clusterModels.get(clusterIndex);
-    clusterId.set(cluster.getId());
+        Mapper<WritableComparable<?>, VectorWritable, IntWritable, WeightedVectorWritable> {
 
-    DistanceMeasureCluster distanceMeasureCluster = (DistanceMeasureCluster) cluster;
-    DistanceMeasure distanceMeasure = distanceMeasureCluster.getMeasure();
-    double distance = distanceMeasure.distance(cluster.getCenter(), vw.get());
+    private double threshold;
+    private List<Cluster> clusterModels;
+    private ClusterClassifier clusterClassifier;
+    private IntWritable clusterId;
+    private boolean emitMostLikely;
 
-    Map<Text, Text> props = Maps.newHashMap();
-    props.put(new Text("distance"), new Text(Double.toString(distance)));
-    context.write(clusterId, new WeightedPropertyVectorWritable(weight, vw.get(), props));
-  }
-  
-  public static List<Cluster> populateClusterModels(Path clusterOutputPath, Configuration conf) throws IOException {
-    List<Cluster> clusters = Lists.newArrayList();
-    FileSystem fileSystem = clusterOutputPath.getFileSystem(conf);
-    FileStatus[] clusterFiles = fileSystem.listStatus(clusterOutputPath, PathFilters.finalPartFilter());
-    Iterator<?> it = new SequenceFileDirValueIterator<Writable>(
-        clusterFiles[0].getPath(), PathType.LIST, PathFilters.partFilter(),
-        null, false, conf);
-    while (it.hasNext()) {
-      ClusterWritable next = (ClusterWritable) it.next();
-      Cluster cluster = next.getValue();
-      cluster.configure(conf);
-      clusters.add(cluster);
+    @Override
+    protected void setup(Context context) throws IOException, InterruptedException {
+        super.setup(context);
+
+        Configuration conf = context.getConfiguration();
+        String clustersIn = conf.get(ClusterClassificationConfigKeys.CLUSTERS_IN);
+        threshold = conf.getFloat(ClusterClassificationConfigKeys.OUTLIER_REMOVAL_THRESHOLD, 0.0f);
+        emitMostLikely = conf.getBoolean(ClusterClassificationConfigKeys.EMIT_MOST_LIKELY, false);
+
+        clusterModels = Lists.newArrayList();
+
+        if (clustersIn != null && !clustersIn.isEmpty()) {
+            Path clustersInPath = new Path(clustersIn);
+            clusterModels = populateClusterModels(clustersInPath, conf);
+            ClusteringPolicy policy = ClusterClassifier
+                    .readPolicy(conf, finalClustersPath(clustersInPath));
+            clusterClassifier = new ClusterClassifier(clusterModels, policy);
+        }
+        clusterId = new IntWritable();
     }
-    return clusters;
-  }
-  
-  private boolean shouldClassify(Vector pdfPerCluster) {
-    return pdfPerCluster.maxValue() >= threshold;
-  }
-  
-  private static Path finalClustersPath(Path clusterOutputPath) throws IOException {
-    FileSystem fileSystem = clusterOutputPath.getFileSystem(new Configuration());
-    FileStatus[] clusterFiles = fileSystem.listStatus(clusterOutputPath, PathFilters.finalPartFilter());
-    return clusterFiles[0].getPath();
-  }
+
+    /**
+     * Mapper which classifies the vectors to respective clusters.
+     */
+    @Override
+    protected void map(WritableComparable<?> key, VectorWritable vw, Context context)
+            throws IOException, InterruptedException {
+        if (!clusterModels.isEmpty()) {
+            // Converting to NamedVectors to preserve the vectorId else its not
+            // obvious as to which point
+            // belongs to which cluster - fix for MAHOUT-1410
+            Class<? extends Vector> vectorClass = vw.get().getClass();
+            Vector vector = vw.get();
+            if (!vectorClass.equals(NamedVector.class)) {
+                if (key.getClass().equals(Text.class)) {
+                    vector = new NamedVector(vector, key.toString());
+                } else if (key.getClass().equals(IntWritable.class)) {
+                    vector = new NamedVector(vector, Integer.toString(((IntWritable) key).get()));
+                }
+            }
+            Vector pdfPerCluster = clusterClassifier.classify(vector);
+            if (shouldClassify(pdfPerCluster)) {
+                if (emitMostLikely) {
+                    int maxValueIndex = pdfPerCluster.maxValueIndex();
+                    write(new VectorWritable(vector), context, maxValueIndex, 1.0);
+                } else {
+                    writeAllAboveThreshold(new VectorWritable(vector), context, pdfPerCluster);
+                }
+            }
+        }
+    }
+
+    private void writeAllAboveThreshold(VectorWritable vw, Context context,
+            Vector pdfPerCluster) throws IOException, InterruptedException {
+        for (Element pdf : pdfPerCluster.nonZeroes()) {
+            if (pdf.get() >= threshold) {
+                int clusterIndex = pdf.index();
+                write(vw, context, clusterIndex, pdf.get());
+            }
+        }
+    }
+
+    private void write(VectorWritable vw, Context context, int clusterIndex, double weight)
+            throws IOException, InterruptedException {
+        Cluster cluster = clusterModels.get(clusterIndex);
+        clusterId.set(cluster.getId());
+
+        DistanceMeasureCluster distanceMeasureCluster = (DistanceMeasureCluster) cluster;
+        DistanceMeasure distanceMeasure = distanceMeasureCluster.getMeasure();
+        double distance = distanceMeasure.distance(cluster.getCenter(), vw.get());
+
+        Map<Text, Text> props = Maps.newHashMap();
+        props.put(new Text("distance"), new Text(Double.toString(distance)));
+        context.write(clusterId, new WeightedPropertyVectorWritable(weight, vw.get(), props));
+    }
+
+    public static List<Cluster> populateClusterModels(Path clusterOutputPath, Configuration conf) throws IOException {
+        List<Cluster> clusters = Lists.newArrayList();
+        FileSystem fileSystem = clusterOutputPath.getFileSystem(conf);
+        FileStatus[] clusterFiles = fileSystem.listStatus(clusterOutputPath, PathFilters.finalPartFilter());
+        Iterator<?> it = new SequenceFileDirValueIterator<Writable>(
+                clusterFiles[0].getPath(), PathType.LIST, PathFilters.partFilter(),
+                null, false, conf);
+        while (it.hasNext()) {
+            ClusterWritable next = (ClusterWritable) it.next();
+            Cluster cluster = next.getValue();
+            cluster.configure(conf);
+            clusters.add(cluster);
+        }
+        return clusters;
+    }
+
+    private boolean shouldClassify(Vector pdfPerCluster) {
+        return pdfPerCluster.maxValue() >= threshold;
+    }
+
+    private static Path finalClustersPath(Path clusterOutputPath) throws IOException {
+        FileSystem fileSystem = clusterOutputPath.getFileSystem(new Configuration());
+        FileStatus[] clusterFiles = fileSystem.listStatus(clusterOutputPath, PathFilters.finalPartFilter());
+        return clusterFiles[0].getPath();
+    }
 }

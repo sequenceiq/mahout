@@ -212,12 +212,12 @@ public class ClusterClassifier extends AbstractVectorClassifier implements Onlin
         }
         this.models = clusters;
         modelClass = models.get(0).getClass().getName();
-        this.policy = readPolicy(path);
+        this.policy = readPolicy(conf, path);
     }
 
-    public static ClusteringPolicy readPolicy(Path path) throws IOException {
+    public static ClusteringPolicy readPolicy(Configuration config, Path path) throws IOException {
         Path policyPath = new Path(path, POLICY_FILE_NAME);
-        Configuration config = new Configuration();
+
         FileSystem fs = FileSystem.get(policyPath.toUri(), config);
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, policyPath, config);
         Text key = new Text();
