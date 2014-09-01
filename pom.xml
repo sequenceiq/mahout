@@ -120,7 +120,7 @@
     <repository>
  	    <id>maven-s3-release-repo</id>
  			<name>S3 Release Repository</name>
- 			<url>s3://seq-repo/release</url>
+ 			<url>s3://maven.sequenceiq.com/releases</url>
  			<releases>
  				<enabled>true</enabled>
  			</releases>
@@ -131,7 +131,7 @@
  		<repository>
  			<id>maven-s3-snapshot-repo</id>
  			<name>S3 Snapshot Repository</name>
- 			<url>s3://seq-repo/snapshots</url>
+ 			<url>s3://maven.sequenceiq.com/snapshots</url>
  			<releases>
  				<enabled>false</enabled>
  			</releases>
